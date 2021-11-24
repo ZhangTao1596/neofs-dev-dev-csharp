@@ -1,0 +1,27 @@
+---
+
+version: "2.4"
+services:
+  morph:
+    image: neo-cli:latest
+    container_name: morph
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+    - ./../../vendor/morph.0.acc:/neo-cli/chain.0.acc
+    - ./DBFTPlugin/config.json:/neo-cli/Plugins/DBFTPlugin/config.json
+    - ./config.json:/neo-cli/config.json
+    - ./wallet.json:/neo-cli/wallet.json
+    domainname: ${LOCAL_DOMAIN}
+    hostname: morph
+    expose:
+      - 20333
+      - 20332
+    networks:
+      internet:
+        ipv4_address: ${IPV4_PREFIX}.90
+
+networks:
+  internet:
+    external: true
+    name: neofs_network

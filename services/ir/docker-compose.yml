@@ -1,0 +1,30 @@
+---
+
+version: "2.4"
+services:
+  neofs_ir:
+    image: neofs-ir:latest
+    container_name: ir01
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+      - ./../../vendor/chain.0.acc:/neo-cli/chain.0.acc
+      - ./../../vendor/morph.0.acc:/neo-cli/morph.0.acc
+      - ./../../vendor/Data_UNLOCODE:/neo-cli/Data_UNLOCODE
+      - ./FileStorageIR/config.json:/neo-cli/Plugins/FileStorageIR/config.json
+      - ./../morph/config.json:/neo-cli/Plugins/FileStorageIR/morph.json
+      - ./../chain/config.json:/neo-cli/config.json
+      - ./wallet.json:/neo-cli/wallet.json
+    domainname: ${LOCAL_DOMAIN}
+    hostname: ir01
+    expose:
+      - 10333
+      - 10332
+    networks:
+      internet:
+        ipv4_address: ${IPV4_PREFIX}.61
+
+networks:
+  internet:
+    external: true
+    name: neofs_network

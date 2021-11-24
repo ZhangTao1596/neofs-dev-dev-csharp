@@ -1,0 +1,92 @@
+---
+
+version: "2.4"
+services:
+
+  neofs_storage01:
+    image: neofs-storage:latest
+    container_name: s01
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+      - ./../../vendor/morph.0.acc:/neo-cli/chain.0.acc
+      - ./s1/FileStorageST/config.json:/neo-cli/Plugins/FileStorageST/config.json
+      - ./../morph/config.json:/neo-cli/config.json
+      - ./s1/wallet.json:/neo-cli/wallet.json
+      - ./../../vendor/hosts:/etc/hosts
+    domainname: ${LOCAL_DOMAIN}
+    hostname: s01
+    expose:
+      - 20333
+      - 20332
+      - 8080
+    networks:
+      internet:
+        ipv4_address: ${IPV4_PREFIX}.71
+
+  neofs_storage02:
+    image: neofs-storage:latest
+    container_name: s02
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+      - ./../../vendor/morph.0.acc:/neo-cli/chain.0.acc
+      - ./s2/FileStorageST/config.json:/neo-cli/Plugins/FileStorageST/config.json
+      - ./../morph/config.json:/neo-cli/config.json
+      - ./s2/wallet.json:/neo-cli/wallet.json
+      - ./../../vendor/hosts:/etc/hosts
+    domainname: ${LOCAL_DOMAIN}
+    hostname: s02
+    expose:
+      - 20333
+      - 20332
+      - 8080
+    networks:
+      internet:
+        ipv4_address: ${IPV4_PREFIX}.72
+  neofs_storage03:
+    image: neofs-storage:latest
+    container_name: s03
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+      - ./../../vendor/morph.0.acc:/neo-cli/chain.0.acc
+      - ./s3/FileStorageST/config.json:/neo-cli/Plugins/FileStorageST/config.json
+      - ./../morph/config.json:/neo-cli/config.json
+      - ./s3/wallet.json:/neo-cli/wallet.json
+      - ./../../vendor/hosts:/etc/hosts
+    domainname: ${LOCAL_DOMAIN}
+    hostname: s03
+    expose:
+      - 20333
+      - 20332
+      - 8080
+    networks:
+      internet:
+        ipv4_address: ${IPV4_PREFIX}.73
+
+  neofs_storage04:
+    image: neofs-storage:latest
+    container_name: s04
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+      - ./../../vendor/morph.0.acc:/neo-cli/chain.0.acc
+      - ./s4/FileStorageST/config.json:/neo-cli/Plugins/FileStorageST/config.json
+      - ./../morph/config.json:/neo-cli/config.json
+      - ./s4/wallet.json:/neo-cli/wallet.json
+      - ./../../vendor/hosts:/etc/hosts
+    domainname: ${LOCAL_DOMAIN}
+    hostname: s04
+    expose:
+      - 20333
+      - 20332
+      - 8080
+    networks:
+      internet:
+        ipv4_address: ${IPV4_PREFIX}.74
+
+networks:
+  internet:
+    external: true
+    name: neofs_network

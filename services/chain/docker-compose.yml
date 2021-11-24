@@ -1,0 +1,28 @@
+---
+
+version: "2.4"
+services:
+  chain:
+    image: neo-cli:latest
+    container_name: chain
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+    - ./../../vendor/chain.0.acc:/neo-cli/chain.0.acc
+    - ./DBFTPlugin/config.json:/neo-cli/Plugins/DBFTPlugin/config.json
+    - ./config.json:/neo-cli/config.json
+    - ./wallet.json:/neo-cli/wallet.json
+    domainname: ${LOCAL_DOMAIN}
+    hostname: chain
+    user: root
+    expose:
+      - 10333
+      - 10332
+    networks:
+      internet:
+        ipv4_address: ${IPV4_PREFIX}.50
+
+networks:
+  internet:
+    external: true
+    name: neofs_network

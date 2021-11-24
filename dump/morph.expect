@@ -1,0 +1,184 @@
+#!/usr/bin/expect
+
+set timeout 10
+
+set zero_hash "0x0000000000000000000000000000000000000000"
+set domain "neofs"
+set fs_contracts "/neofs-contracts"
+set multi_address "Nb9vcoeU9ibVnVMUBXNhDwDXYekDKoNAuW"
+set multi_hash "0x883b82b5a810583b524fca15689a1aca03912da7"
+set single_address "NWBoSibSXCAjBPkmx6LqQYMeQ8GQaEkrgq"
+set single_public_key "03c386512676a990ff9ed31449ab965cf1868e555337ed0fd51fff9d19fbce7d54"
+set password "1"
+set out_file "/script_hashes.txt"
+set outFileId [open ${out_file} "w"]
+set storages "NU7ETiQStE28mR9mzHtBAUGSH2PVofAPjJ Ne1Cu4AqrDNkUEddor2k71as49i38cxvua NZp7nyvNH1PsSG3hdxo5JGDX4Ra3Jkb6NE NNTB5a2Rr2khiivxXtkoyPoVutoqLwDyMx"
+
+proc invoke_contract { scriptHash method params sender } {
+    expect *
+    send "invoke ${scriptHash} ${method}  ${params} ${sender}\n"
+    expect "Relay tx?"
+    expect *
+    send "yes\n"
+    expect "neo>"
+    sleep 2
+}
+
+proc generate_hash { name params } {
+    global fs_contracts
+    expect *
+    send "deploy ${fs_contracts}/${name}/${name}_contract.nef ${fs_contracts}/${name}/config.json ${params}\n"
+    expect -re {Contract hash: .*0x[0-9|a-z]{40}}
+    set output $expect_out(0,string)
+    set hash [string range $output 37 76]
+    expect *
+    send "\n"
+    expect "neo>"
+    return ${hash}
+}
+
+proc deploy { name params } {
+    global fs_contracts
+    expect *
+    send "deploy ${fs_contracts}/${name}/${name}_contract.nef ${fs_contracts}/${name}/config.json ${params}\n"
+    expect -re {Contract hash: .*0x[0-9|a-z]{40}}
+    set output $expect_out(0,string)
+    set hash [string range $output 37 76]
+    expect "Relay tx?"
+    expect *
+    send "yes\n"
+    expect "neo>"
+    sleep 2
+    return ${hash}
+}
+
+proc add_root { domain } {
+    global nns_hash
+    global multi_address
+    set _ [invoke_contract ${nns_hash} "addRoot" "\[\{\"type\":\"String\",\"value\":\"${domain}\"\}\]" ${multi_address}]
+}
+
+proc register_domain { name } {
+    global nns_hash
+    global domain
+    global multi_address
+    global multi_hash
+    set _ [invoke_contract "${nns_hash}" "register" "\[\{\"type\":\"String\",\"value\":\"${name}.${domain}\"\},\{\"type\":\"Hash160\",\"value\":\"${multi_hash}\"\},\{\"type\":\"String\",\"value\":\"zhangtao@ngd.neo.org\"\},\{\"type\":\"Integer\",\"value\":\"86400\"\},\{\"type\":\"Integer\",\"value\":\"7200\"\},\{\"type\":\"Integer\",\"value\":\"2147483647\"\},\{\"type\":\"Integer\",\"value\":\"3600\"\}\]" ${multi_address}]
+}
+
+proc add_record { name contract_hash } {
+    global nns_hash
+    global domain
+    global multi_address
+    set _ [invoke_contract ${nns_hash} "addRecord" "\[\{\"type\":\"String\",\"value\":\"${name}.${domain}\"\},\{\"type\":\"Integer\",\"value\":\"16\"\},\{\"type\":\"String\",\"value\":\"${contract_hash}\"\}\]" ${multi_address}]
+}
+
+proc send_asset { asset address amount from } {
+    global password
+    send "send ${asset} ${address} ${amount} ${from}\n"
+    expect "password"
+    send "${password}\n"
+    expect "Relay tx?"
+    expect *
+    send "yes\n"
+    expect "neo>"
+    sleep 2
+}
+
+proc get_native { name } {
+    expect *
+    send "list nativecontract\n"
+    expect -re "${name} .*0x\[0-9\|a-z\]\{40\}"
+    set output $expect_out(0,string)
+    set hash [string range $output 40 81]
+    return ${hash}
+}
+
+proc write_hash { name hash } {
+    global outFileId
+    puts -nonewline ${outFileId} "0x${hash} ${name}\n"
+}
+
+spawn screen -r neo-cli
+expect "neo>"
+sleep 1
+
+set _ [send_asset "gas" ${single_address} "51000000" ""]
+
+# designate ir
+set role_managment_hash [get_native "RoleManagement"]
+set _ [invoke_contract ${role_managment_hash} "designateAsRole" "\[\{\"type\":\"Integer\",\"value\":\"16\"\},\{\"type\":\"Array\",\"value\":\[\{\"type\":\"PublicKey\",\"value\":\"${single_public_key}\"\}\]\}\]" ${multi_address}]
+
+# deploy nns
+set nns_hash [deploy "nns" ""]
+set _ [write_hash "nns" ${nns_hash}]
+# add root
+set _ [add_root ${domain}] 
+
+# generate netmap hash
+set netmap_hash [generate_hash "netmap" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${zero_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${zero_hash}\"\},\{\"type\":\"Array\",\"value\":\[\{\"type\":\"PublicKey\",\"value\":\"03c386512676a990ff9ed31449ab965cf1868e555337ed0fd51fff9d19fbce7d54\"\}\]\},\{\"type\":\"Array\",\"value\":\[\]\}\]\}"]
+
+# deploy proxy
+set proxy_hash [deploy "proxy" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Hash160\",\"value\":\"${netmap_hash}\"\}\]\}"]
+set _ [register_domain "proxy"]
+set _ [add_record "proxy" ${proxy_hash}]
+set _ [write_hash "proxy" ${proxy_hash}]
+
+# generate container hash
+set container_hash [generate_hash "container" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${zero_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${zero_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${zero_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${nns_hash}\"\},\{\"type\":\"String\",\"value\":\"neofs\"\}\]\}"]
+
+# deploy balance
+set balance_hash [deploy "balance" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${netmap_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${container_hash}\"\}\]\}"]
+set _ [register_domain "balance"]
+set _ [add_record "balance" ${balance_hash}]
+set _ [write_hash "balance" ${balance_hash}]
+
+# deploy netmap
+set _ [deploy "netmap" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${balance_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${container_hash}\"\},\{\"type\":\"Array\",\"value\":\[\{\"type\":\"PublicKey\",\"value\":\"03c386512676a990ff9ed31449ab965cf1868e555337ed0fd51fff9d19fbce7d54\"\}\]\},\{\"type\":\"Array\",\"value\":\[\{\"type\":\"String\",\"value\":\"MaxObjectSize\"\},\{\"type\":\"Integer\",\"value\":\"67108864\"\},\{\"type\":\"String\",\"value\":\"BasicIncomeRate\"\},\{\"type\":\"Integer\",\"value\":\"100000000\"\},\{\"type\":\"String\",\"value\":\"AuditFee\"\},\{\"type\":\"Integer\",\"value\":\"10000\"\},\{\"type\":\"String\",\"value\":\"EpochDuration\"\},\{\"type\":\"Integer\",\"value\":\"240\"\},\{\"type\":\"String\",\"value\":\"ContainerFee\"\},\{\"type\":\"Integer\",\"value\":\"1000\"\},\{\"type\":\"String\",\"value\":\"EigenTrustIterations\"\},\{\"type\":\"Integer\",\"value\":\"4\"\},\{\"type\":\"String\",\"value\":\"EigenTrustAlpha\"\},\{\"type\":\"String\",\"value\":\"0.1\"\},\{\"type\":\"String\",\"value\":\"InnerRingCandidateFee\"\},\{\"type\":\"Integer\",\"value\":\"10000000000\"\},\{\"type\":\"String\",\"value\":\"WithdrawFee\"\},\{\"type\":\"Integer\",\"value\":\"100000000\"\}\]\}\]\}"]
+set _ [register_domain "netmap"]
+set _ [add_record "netmap" ${netmap_hash}]
+set _ [write_hash "netmap" ${netmap_hash}]
+
+# deploy nefsid
+set neofsid_hash [deploy "neofsid" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${netmap_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${container_hash}\"\}\]\}"]
+set _ [register_domain "neofsid"]
+set _ [add_record "neofsid" ${neofsid_hash}]
+set _ [write_hash "neofsid" ${neofsid_hash}]
+
+# deploy alphabet
+set alphabet0_hash [deploy "alphabet" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${netmap_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${proxy_hash}\"\},\{\"type\":\"String\",\"value\":\"ir1\"\},\{\"type\":\"Integer\",\"value\":\"0\"\},\{\"type\":\"Integer\",\"value\":\"1\"\}\]\}"]
+set _ [register_domain "alphabet0"]
+set _ [add_record "alphabet0" ${alphabet0_hash}]
+set _ [write_hash "alphabet0" ${alphabet0_hash}]
+
+# deploy container
+set _ [deploy "container" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${netmap_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${balance_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${neofsid_hash}\"\},\{\"type\":\"Hash160\",\"value\":\"${nns_hash}\"\},\{\"type\":\"String\",\"value\":\"${domain}\"\}\]\}"]
+set _ [register_domain "container"]
+set _ [add_record "container" ${container_hash}]
+set _ [write_hash "container" ${container_hash}]
+
+# deploy reputation
+set reputation_hash [deploy "reputation" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\}\]\}"]
+set _ [register_domain "reputation"]
+set _ [add_record "reputation" ${reputation_hash}]
+set _ [write_hash "reputation" ${reputation_hash}]
+
+# deploy audit
+set audit_hash [deploy "audit" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${netmap_hash}\"\}\]\}"]
+set _ [register_domain "audit"]
+set _ [add_record "audit" ${audit_hash}]
+set _ [write_hash "audit" ${audit_hash}]
+
+set _ [send_asset "gas" ${alphabet0_hash} "50000000" ${single_address}]
+foreach address ${storages} {
+    set _ [send_asset "gas" ${address} "10" ${single_address}]
+}
+sleep 2
+
+expect *
+send "export blocks 0\n"
+expect "100.0%"
+send "exit\n"
+
+# send "\x01"
+# send "d"

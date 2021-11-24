@@ -1,0 +1,109 @@
+#!/usr/bin/expect
+
+set timeout 10
+
+set zero_hash "0x0000000000000000000000000000000000000000"
+set fs_contracts "/neofs-contracts"
+set multi_address "Nb9vcoeU9ibVnVMUBXNhDwDXYekDKoNAuW"
+set multi_hash "0x883b82b5a810583b524fca15689a1aca03912da7"
+set single_address "NWBoSibSXCAjBPkmx6LqQYMeQ8GQaEkrgq"
+set single_public_key "03c386512676a990ff9ed31449ab965cf1868e555337ed0fd51fff9d19fbce7d54"
+set password "1"
+set out_file "/script_hashes.txt"
+set outFileId [open ${out_file} "w"]
+
+proc generate_hash { name params } {
+    global fs_contracts
+    expect *
+    send "deploy ${fs_contracts}/${name}/${name}_contract.nef ${fs_contracts}/${name}/config.json ${params}\n"
+    expect -re {Contract hash: .*0x[0-9|a-z]{40}}
+    set output $expect_out(0,string)
+    set hash [string range $output 37 76]
+    expect *
+    send "\n"
+    expect "neo>"
+    return ${hash}
+}
+
+proc deploy { name params } {
+    global fs_contracts
+    expect *
+    send "deploy ${fs_contracts}/${name}/${name}_contract.nef ${fs_contracts}/${name}/config.json ${params}\n"
+    expect -re {Contract hash: .*0x[0-9|a-z]{40}}
+    set output $expect_out(0,string)
+    set hash [string range $output 37 76]
+    expect "Relay tx?"
+    expect *
+    send "yes\n"
+    expect "neo>"
+    sleep 2
+    return ${hash}
+}
+
+proc invoke_contract { scriptHash method params sender } {
+    global fs_contracts
+    expect *
+    send "invoke ${scriptHash} ${method}  ${params} ${sender}\n"
+    expect "Relay tx?"
+    expect *
+    send "yes\n"
+    expect "neo>"
+    sleep 2
+}
+
+proc get_native { name } {
+    expect *
+    send "list nativecontract\n"
+    expect -re "${name} .*0x\[0-9\|a-z\]\{40\}"
+    set output $expect_out(0,string)
+    set hash [string range $output 40 81]
+    return ${hash}
+}
+
+proc send_asset { asset address amount from } {
+    global password
+    send "send ${asset} ${address} ${amount} ${from}\n"
+    expect "password"
+    send "${password}\n"
+    expect "Relay tx?"
+    expect *
+    send "yes\n"
+    expect "neo>"
+    sleep 2
+}
+
+proc write_hash { name hash } {
+    global outFileId
+    puts -nonewline ${outFileId} "0x${hash} ${name}\n"
+}
+
+spawn screen -r neo-cli
+expect "neo>"
+
+set _ [send_asset "gas" ${single_address} "50000000" ""]
+
+# fs hash
+set neofs_hash [generate_hash "neofs" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"$zero_hash\"\},\{\"type\":\"Array\",\"value\":\[\{\"type\":\"PublicKey\",\"value\":\"${single_public_key}\"\}\]\},\{\"type\":\"Array\",\"value\":\[\]\}\]\}"]
+
+# deploy processing
+set processing_hash [deploy "processing" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Hash160\",\"value\":\"${neofs_hash}\"\}\]\}"]
+set _ [write_hash "processing" ${processing_hash}]
+
+# deploy fs
+set _ [deploy "neofs" "\{\"type\":\"Array\",\"value\":\[\{\"type\":\"Boolean\",\"value\":\"true\"\},\{\"type\":\"Hash160\",\"value\":\"${processing_hash}\"\},\{\"type\":\"Array\",\"value\":\[\{\"type\":\"PublicKey\",\"value\":\"${single_public_key}\"\}\]\},\{\"type\":\"Array\",\"value\":\[\]\}\]\}"]
+set _ [write_hash "neofs" ${neofs_hash}]
+
+# designate ir
+set role_managment_hash [get_native "RoleManagement"]
+set _ [invoke_contract ${role_managment_hash} "designateAsRole" "\[\{\"type\":\"Integer\",\"value\":\"16\"\},\{\"type\":\"Array\",\"value\":\[\{\"type\":\"PublicKey\",\"value\":\"${single_public_key}\"\}\]\}\]" ${multi_address}]
+
+# deposit
+set _ [send_asset "gas" ${neofs_hash} "100" ${single_address}]
+
+expect *
+send "export blocks 0\n"
+expect "100.0%"
+send "exit\n"
+
+# send "\x01"
+# send "d"

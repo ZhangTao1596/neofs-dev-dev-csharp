@@ -1,0 +1,92 @@
+{
+  "PluginConfiguration": {
+    "IsDebug": true,
+    "AutoStart": true,
+    "WalletPath": "./wallet.json",
+    "Password": "1",
+    "Contracts": {
+      "Netmap": "0x0a30bab2bca365e42e3c6795362eadd37bacca22",
+      "NeoFS": "0x5d14c8f22617473e8e4bee45855dbb3e349a4e65",
+      "NeoFSID": "0x75ece59fb1b3013f9956788612839923996b78e6",
+      "Balance": "0x46bce3b1eeaeee651ee10df69bb5300a96b049b3",
+      "Container": "0x0f4f6f679757145934b1d83c6ab23ccffa700220",
+      "Audit": "0xa03c2b95620079331444ba697cddf8046026de8d",
+      "Reputation": "0xc011f8e854cb9bf68e51823323b9fcc0194516d1",
+      "Alphabet": [
+        "0xf6fa6c297e3bd94131a336127279bc6e19f0fbb7"
+      ]
+    },
+    "Votes": [],
+    "Workers": {
+      "Netmap": 10,
+      "NeoFS": 10,
+      "Balance": 10,
+      "Container": 10,
+      "Alphabet": 10,
+      "Reputation": 10
+    },
+    "Timers": {
+      "Epoch": 240,
+      "Emit": 600000,
+      "StopEstimation": {
+        "Mul": 1,
+        "Div": 4
+      },
+      "CollectBasicIncome": {
+        "Mul": 1,
+        "Div": 2
+      },
+      "DistributeBasicIncome": {
+        "Mul": 3,
+        "Div": 4
+      }
+    },
+    "Emit": {
+      "Mint": {
+        "CacheSize": 100,
+        "Threshold": 100,
+        "Value": 2
+      },
+      "Gas": {
+        "BalanceThreshold": 100
+      },
+      "Storage": {
+        "Amount": 1
+      }
+    },
+    "NetmapCleaner": {
+      "Enabled": false,
+      "Threshold": 3
+    },
+    "Audit": {
+      "Timeout": {
+        "Get": 5000,
+        "Head": 5000,
+        "RangeHash": 5000,
+        "Search": 10000
+      },
+      "PDP": {
+        "PoolSize": 100,
+        "MaxSleepInterval": 100
+      },
+      "POR": {
+        "PoolSize": 100
+      },
+      "Task": {
+        "QueueCapacity": 100,
+        "PoolSize": 10
+      }
+    },
+    "Indexer": {
+      "CacheTimeout": 100
+    },
+    "Settlement": {
+      "BasicIncomeRate": 10,
+      "AuditFee": 1000
+    },
+    "Fee": {
+      "MainChain": 5000,
+      "SideChain": 5000
+    }
+  }
+}

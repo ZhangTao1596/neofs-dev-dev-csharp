@@ -1,0 +1,76 @@
+{
+  "PluginConfiguration": {
+    "AutoStart": true,
+    "RebootInterval": 2,
+    "Addresses": [
+      "/ip4/s02.neofs.csharp.env/tcp/8080"
+    ],
+    "Port": 8080,
+    "SslCert": "",
+    "SslCertPassword": "",
+    "Attributes": [
+      "Capacity: 0",
+      "Price: 22",
+      "UN-LOCODE: RU MOW"
+    ],
+    "TombstoneLifetime": 5,
+    "SideChainFee": 5000,
+    "Administrators": [
+      "024be9487fceb4211dad0a3078ce4e2d0d92e2bf690092153efe871927f8194432"
+    ],
+    "Shards": [
+      {
+        "UseWriteCache": false,
+        "RemoveBatchSize": 100,
+        "RemoverInterval": 60000,
+        "WriteCache": {
+          "Path": "./Data/Shard_0/Data_WriteCache",
+          "MaxMemorySize": 1073741824,
+          "MaxObjectSize": 67108864,
+          "SmallObjectSize": 32768,
+          "MaxDBSize": 0
+        },
+        "BlobStorage": {
+          "Path": "./Data/Shard_0/Data_BlobStorage",
+          "Compress": true,
+          "ShallowDepth": 4,
+          "SmallSizeLimit": 1048576,
+          "Blobovnicza": {
+            "Size": 1073741824,
+            "ShallowDepth": 1,
+            "ShallowWidth": 2,
+            "OpenCacheSize": 8
+          }
+        },
+        "Metabase": {
+          "Path": "./Data/Shard_0/Data_Metabase"
+        }
+      },
+      {
+        "UseWriteCache": false,
+        "WriteCache": {
+          "Path": "./Data/Shard_1/Data_WriteCache",
+          "MaxMemorySize": 1073741824,
+          "MaxObjectSize": 67108864,
+          "SmallObjectSize": 32768,
+          "MaxDbSize": 0
+        },
+        "BlobStorage": {
+          "Path": "./Data/Shard_1/Data_BlobStorage",
+          "Compress": true,
+          "ShallowDepth": 4,
+          "SmallSizeLimit": 1048576,
+          "Blobovnicza": {
+            "Size": 1073741824,
+            "ShallowDepth": 1,
+            "ShallowWidth": 2,
+            "OpenCacheSize": 8
+          }
+        },
+        "Metabase": {
+          "Path": "./Data/Shard_1/Data_Metabase"
+        }
+      }
+    ]
+  }
+}

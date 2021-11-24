@@ -1,0 +1,30 @@
+{
+    "name": null,
+    "version": "1.0",
+    "scrypt": {
+        "n": 16384,
+        "r": 8,
+        "p": 8
+    },
+    "accounts": [
+        {
+            "address": "NU7ETiQStE28mR9mzHtBAUGSH2PVofAPjJ",
+            "label": null,
+            "isDefault": false,
+            "lock": false,
+            "key": "6PYNyTiHk3D3ddqJrFHHi2iAbN9mFuSHFupjbeSPDDTCXkFiXoSxy6g8Sw",
+            "contract": {
+                "script": "DCED0UoDSRJfCiYWpF13ceAd3qBOYX0/S5Mp283GgeWD\u002BQJBVuezJw==",
+                "parameters": [
+                    {
+                        "name": "signature",
+                        "type": "Signature"
+                    }
+                ],
+                "deployed": false
+            },
+            "extra": null
+        }
+    ],
+    "extra": null
+}
